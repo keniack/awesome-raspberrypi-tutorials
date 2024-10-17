@@ -5,7 +5,8 @@ Raspberry Pi's made simple!
 ## Table of Contents
 
 1. [Install Ubuntu on Raspberry Pi 3/4/5](#install-ubuntu-on-raspberry-pi-345)
-2. [Install Kubernetes (MicroK8s) Server on Raspberry Pi 3/4/5](#install-kubernetes-microk8s-server-on-raspberry-pi-345)
+2. [Install Kubernetes (MicroK8s) on Raspberry Pi 3/4/5](#install-kubernetes-microk8s-on-raspberry-pi-345)
+3. [Install Knative on Kubernetes (MicroK8s) on Raspberry Pi 3/4/5](#install-knative-on-kubernetesmicrok8s-on-raspberry-pi-345)
 
 
 ## Install Ubuntu Server on Raspberry Pi 3/4/5
@@ -57,7 +58,7 @@ After entering your details, click 'Save' and then 'Write' to flash the SD card.
 For more details, visit the source: [Ubuntu Raspberry Pi Installation Tutorial](https://ubuntu.com/tutorials/how-to-install-ubuntu-on-your-raspberry-pi)
 
 
-## Install Kubernetes (Microk8s) Server on Raspberry Pi 3/4/5
+## Install Kubernetes (Microk8s) on Raspberry Pi 3/4/5
 
 
 ### 1. Enabling cgroups
@@ -150,5 +151,127 @@ It may take a minute or two to install, but you can check the status:
 microk8s kubectl get pods
 ```
 
+## Install Knative on Kubernetes(Microk8s) on Raspberry Pi 3/4/5
 
+### 1. Prerequisites
+
+Before installing Knative on MicroK8s, ensure you have the following:
+
+1. A Raspberry Pi 3, 4, or 5 with Ubuntu installed.
+2. MicroK8s installed. 
+
+### 2. Enable Community Add-ons
+
+Knative is part of the MicroK8s community add-ons. To enable Knative, you must first enable the community add-ons repository:
+
+```bash
+microk8s enable community
+```
+
+---
+
+### 3. Install Knative
+
+After enabling the community repository, you can now install Knative using MicroK8s:
+
+```bash
+microk8s enable knative
+```
+
+This will install both the **Knative Serving** and **Knative Eventing** components to manage your serverless workloads.
+
+---
+
+### 4. Verify Installation
+
+To verify that Knative has been successfully installed, you can run:
+
+```bash
+microk8s kubectl get pods -n knative-serving
+microk8s kubectl get pods -n knative-eventing
+```
+
+Check that all pods are running and that Knative is ready to serve your serverless applications.
+
+---
+
+### 5. Deploy a Sample Knative Service
+
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: hello
+spec:
+  template:
+    spec:
+      containers:
+      - image: csantanapr/helloworld-go:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: TARGET
+          value: "Knative"
+EOF
+```
+
+This will deploy a simple Knative service that returns a "Hello Knative" message.
+
+### 6. Verify Deployment 
+
+```
+kubectl get service.serving.knative.dev
+```
+
+### 7. Testing Deployed Service
+
+```
+kubectl get service.serving.knative.dev
+```
+#### 7.1 Get the IP address of the Ingress Gateway
+
+First, you'll need to get the IP address of your Ingress:
+
+```bash
+microk8s kubectl get service kourier-internal -n knative-serving -o wide
+```
+
+Example:
+
+```
+microk8s kubectl get service kourier-internal -n knative-serving -o wide
+
+NAME               TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE   SELECTOR
+kourier-internal   ClusterIP   10.152.183.42   <none>        80/TCP,443/TCP   15d   app=3scale-kourier-gateway
+```
+
+#### 7.2 Get the Service URL
+
+Next, you need the URL of the Knative service. You can retrieve the service’s internal URL using:
+
+```
+microk8s kubectl get service.serving.knative.dev
+```
+You’ll see output like this:
+
+```
+NAME    URL                                        LATESTCREATED   LATESTREADY    READY   REASON
+hello   http://hello.default.svc.cluster.local     hello-xyz       hello-xyz      True
+```
+
+#### 7.4 Call the Service
+
+You can now curl the service by using the Cluster-IP address and full URL:
+
+```bash
+curl -v -H "Host: hello.default.svc.cluster.local" http://10.152.183.42 -d "Hello World!"
+```
+
+This will invoke the Knative service directly without requiring DNS.
+
+### Additional Resources
+
+- [Knative Documentation](https://knative.dev/docs/)
+- [MicroK8s Add-ons](https://microk8s.io/docs/addons)
 
