@@ -4,7 +4,7 @@ Raspberry Pi's made simple!
 
 ## Table of Contents
 
-1. [Install Ubuntu on Raspberry Pi 3/4/5](#install-ubuntu-on-raspberry-pi-345)
+1. [Install Ubuntu Server on Raspberry Pi 3/4/5](#install-ubuntu-server-on-raspberry-pi-345)
 2. [Install Kubernetes (MicroK8s) on Raspberry Pi 3/4/5](#install-kubernetes-microk8s-on-raspberry-pi-345)
 3. [Install Knative on Kubernetes (MicroK8s) on Raspberry Pi 3/4/5](#install-knative-on-kubernetesmicrok8s-on-raspberry-pi-345)
 
@@ -157,7 +157,7 @@ microk8s kubectl get pods
 
 Before installing Knative on MicroK8s, ensure you have the following:
 
-1. [A Raspberry Pi 3, 4, or 5 with Ubuntu installed](#install-ubuntu-on-raspberry-pi-345).
+1. [A Raspberry Pi 3, 4, or 5 with Ubuntu installed](#install-ubuntu-server-on-raspberry-pi-345).
 2. [MicroK8s installed](#install-kubernetes-microk8s-on-raspberry-pi-345). 
 
 ### 2. Enable Community Add-ons
