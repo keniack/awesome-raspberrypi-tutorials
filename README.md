@@ -7,6 +7,7 @@ Raspberry Pi's made simple!
 1. [Install Ubuntu Server on Raspberry Pi 3/4/5](#install-ubuntu-server-on-raspberry-pi-345)
 2. [Install Kubernetes (MicroK8s) on Raspberry Pi 3/4/5](#install-kubernetes-microk8s-on-raspberry-pi-345)
 3. [Install Knative on Kubernetes (MicroK8s) on Raspberry Pi 3/4/5](#install-knative-on-kubernetesmicrok8s-on-raspberry-pi-345)
+4. [Deploy WebAssembly (Wasm) Serverless Applications with Knative and Kubernetes (MicroK8s) on Raspberry Pi 3/4/5](#deploy-webassembly-wasm-serverless-applications-with-knative-and-kubernetesmicrok8s-on-raspberry-pi-345)
 
 
 ## Install Ubuntu Server on Raspberry Pi 3/4/5
@@ -274,4 +275,141 @@ This will invoke the Knative service directly without requiring DNS.
 
 - [Knative Documentation](https://knative.dev/docs/)
 - [MicroK8s Add-ons](https://microk8s.io/docs/addons)
+
+## Deploy WebAssembly (Wasm) Serverless Applications with Knative and Kubernetes(Microk8s) on Raspberry Pi 3/4/5
+
+### 1. Prerequisites
+
+Before installing Knative on MicroK8s, ensure you have the following:
+
+1. [A Raspberry Pi 3, 4, or 5 with Ubuntu installed](#install-ubuntu-server-on-raspberry-pi-345).
+2. [MicroK8s installed](#install-kubernetes-microk8s-on-raspberry-pi-345).
+3. [Knative](#install-knative-on-kubernetesmicrok8s-on-raspberry-pi-345)
+
+
+### 2. Enable kwasm
+
+To enable WebAssembly support on MicroK8s, you first need to enable the kwasm addon. Run the following command:
+
+```bash
+microk8s enable kwasm
+```
+
+This will enable the required components to support WebAssembly applications in Kubernetes.
+
+---
+
+### 3. Deploy Wasm Runtime
+
+Now that you have the WebAssembly runtime installed on the nodes via kwasm operator, you can deploy a runtime class for your Wasm applications. Use the following YAML to create the `RuntimeClass` for `wasmedge`:
+
+```bash
+cat <<EOF | microk8s kubectl apply -f -
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: wasmedge
+handler: wasmedge
+EOF
+```
+
+This will set up `wasmedge` as the runtime for running Wasm-based serverless applications on Kubernetes with MicroK8s. More runtime examples (spin,wasmtime,wasmer) in the file [examples/runtimeclass.yml](examples/runtimeclass.yml).
+
+### 4. Remove Knative Serving Validation
+
+Knative does not allow deploying resources with `runtimeClassName`, which is required to run WebAssembly workloads using `wasmedge`. To bypass this limitation, you need to delete the Knative Validating Webhook that enforces this restriction.
+
+Check validations
+```bash
+kubectl get ValidatingWebhookConfiguration
+```
+
+Removing serving validation
+
+```bash
+kubectl delete ValidatingWebhookConfiguration validation.webhook.serving.knative.dev
+```
+
+### 5. Deploy a Wasmedge Function on Knative
+
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: http-wasm
+  namespace: default
+spec:
+  template:
+    metadata:
+      annotations:
+        module.wasm.image/variant: compat-smart
+    spec:
+      runtimeClassName: wasmedge
+      containers:
+      - name: http-server
+        image: docker.io/wasmedge/example-wasi-http:latest
+        ports:
+        - containerPort: 1234
+          protocol: TCP
+        livenessProbe:
+          tcpSocket:
+            port: 1234
+EOF
+```
+
+This will deploy a simple Knative service that returns a "Hello Knative" message.
+
+### 6. Verify Deployment 
+
+```
+kubectl get service.serving.knative.dev
+```
+
+### 7. Testing Deployed Service
+
+```
+kubectl get service.serving.knative.dev
+```
+#### 7.1 Get the IP address of the Ingress Gateway
+
+First, you'll need to get the IP address of your Ingress:
+
+```bash
+microk8s kubectl get service kourier-internal -n knative-serving -o wide
+```
+
+Example:
+
+```
+microk8s kubectl get service kourier-internal -n knative-serving -o wide
+
+NAME               TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE   SELECTOR
+kourier-internal   ClusterIP   10.152.183.42   <none>        80/TCP,443/TCP   15d   app=3scale-kourier-gateway
+```
+
+#### 7.2 Get the Service URL
+
+Next, you need the URL of the Knative service. You can retrieve the service’s internal URL using:
+
+```
+microk8s kubectl get service.serving.knative.dev
+```
+You’ll see output like this:
+
+```
+NAME    URL                                        LATESTCREATED   LATESTREADY    READY   REASON
+hello   http://http-wasm.default.svc.cluster.local http-wasm-xyz   http-wasm-xyz      True
+```
+
+#### 7.3 Call the Service
+
+You can now curl the service by using the Cluster-IP address and full URL:
+
+```bash
+curl -v -H "Host: http-wasm.default.svc.cluster.local" http://10.152.183.42 -d "Hello World!"
+```
+
+This will invoke the Knative service directly without requiring DNS.
+
 
