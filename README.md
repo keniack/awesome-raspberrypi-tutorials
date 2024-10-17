@@ -157,8 +157,8 @@ microk8s kubectl get pods
 
 Before installing Knative on MicroK8s, ensure you have the following:
 
-1. A Raspberry Pi 3, 4, or 5 with Ubuntu installed.
-2. MicroK8s installed. 
+1. [A Raspberry Pi 3, 4, or 5 with Ubuntu installed](#install-ubuntu-on-raspberry-pi-345).
+2. [MicroK8s installed](#install-kubernetes-microk8s-on-raspberry-pi-345). 
 
 ### 2. Enable Community Add-ons
 
