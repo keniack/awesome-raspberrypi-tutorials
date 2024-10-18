@@ -337,7 +337,7 @@ cat <<EOF | kubectl apply -f -
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: http-wasm
+  name: wasm-http-server
   namespace: default
 spec:
   template:
@@ -347,18 +347,14 @@ spec:
     spec:
       runtimeClassName: wasmedge
       containers:
-      - name: http-server
-        image: docker.io/wasmedge/example-wasi-http:latest
+      - name: funcb
+        image: docker.io/keniack/wasm-http-server:latest
         ports:
-        - containerPort: 1234
-          protocol: TCP
-        livenessProbe:
-          tcpSocket:
-            port: 1234
+        - containerPort: 8080
 EOF
 ```
 
-This will deploy a simple Knative service that returns a "Hello Knative" message.
+This will deploy a simple Knative service that returns a "Hello World" message.
 
 ### 6. Verify Deployment 
 
@@ -398,8 +394,8 @@ microk8s kubectl get service.serving.knative.dev
 You’ll see output like this:
 
 ```
-NAME    URL                                        LATESTCREATED   LATESTREADY    READY   REASON
-hello   http://http-wasm.default.svc.cluster.local http-wasm-xyz   http-wasm-xyz      True
+NAME    URL                                               LATESTCREATED          LATESTREADY    READY   REASON
+hello   http://wasm-http-server.default.svc.cluster.local wasm-http-server-xyz   wasm-http-server-xyz      True
 ```
 
 #### 7.3 Call the Service
@@ -407,7 +403,7 @@ hello   http://http-wasm.default.svc.cluster.local http-wasm-xyz   http-wasm-xyz
 You can now curl the service by using the Cluster-IP address and full URL:
 
 ```bash
-curl -v -H "Host: http-wasm.default.svc.cluster.local" http://10.152.183.42 -d "Hello World!"
+curl -v -H "Host: wasm-http-server.default.svc.cluster.local" http://10.152.183.42 -d "Hello World!"
 ```
 
 This will invoke the Knative service directly without requiring DNS.
