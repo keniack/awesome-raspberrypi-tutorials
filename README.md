@@ -36,7 +36,7 @@ In the Advanced Options menu, you can:
 
 After entering your details, click 'Save' and then 'Write' to flash the SD card. Eject the SD card and insert it into your Raspberry Pi.
 
-### 5. Boot Ubuntu Server
+### 3. Boot Ubuntu Server
 
 1. Connect an HDMI screen and USB keyboard, then power on the Pi.
 2. **Warning**: Wait for cloud-init to finish before logging in (typically less than 2 minutes).
